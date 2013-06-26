@@ -164,8 +164,6 @@ SimpleSim = {}; exports = SimpleSim;
     this.height = viewportSize.height;
     this.location = new exports.Vector(viewportSize.width / 2, viewportSize.height / 2);
     this.gravity = new exports.Vector(0, 0.1);
-    this.wind = new exports.Vector(0.05, 0);
-    this.thermal = new exports.Vector(0, -0.025);
     this.color = 'transparent';
     this.visibility ='visible';
   }
@@ -219,12 +217,10 @@ SimpleSim = {}; exports = SimpleSim;
 
     var options = opt_options || {};
 
-    this.acceleration = options.acceleration || new exports.Vector();
     this.velocity = options.velocity || new exports.Vector();
     this.location = options.location || new exports.Vector(this.world.width / 2, this.world.height / 2);
     this.width = options.width || 20;
     this.height = options.height || 20;
-    this.mass = (this.width * this.height) * 0.01;
     this.color = options.color || [0, 0, 0];
     this.visibility = options.visibility || 'visible';
   };
@@ -233,53 +229,8 @@ SimpleSim = {}; exports = SimpleSim;
    * Updates properties.
    */
   Item.prototype.step = function() {
-    this.applyForce(this.world.wind);
-    this.applyForce(this.world.thermal);
-    this.applyForce(this.world.gravity);
-    this.velocity.add(this.acceleration);
-    this._checkWorldEdges();
+    this.velocity.add(this.world.gravity);
     this.location.add(this.velocity);
-    this.acceleration.mult(0);
-  };
-
-/**
- * Adds a force to this object's acceleration.
- *
- * @param {Object} force A Vector representing a force to apply.
- */
-  Item.prototype.applyForce = function(force) {
-    var vector = new exports.Vector(force.x, force.y);
-    vector.div(this.mass);
-    this.acceleration.add(vector);
-  };
-
-  /**
-   * Determines if this object is outside the world bounds.
-   * @private
-   */
-  Item.prototype._checkWorldEdges = function() {
-
-    var world = this.world,
-        location = this.location,
-        velocity = this.velocity,
-        width = this.width,
-        height = this.height;
-
-    if (location.x + width / 2 > world.width) {
-      location.x = world.width - width / 2;
-      velocity.x *= -1;
-    } else if (location.x < width / 2) {
-      location.x = width / 2;
-      velocity.x *= -1;
-    }
-
-    if (location.y + height / 2 > world.height) {
-      location.y = world.height - height / 2;
-      velocity.y *= -1;
-    } else if (location.y < height / 2) {
-      location.y = height / 2;
-      velocity.y *= -1;
-    }
   };
 
   /**
