@@ -8,16 +8,19 @@
   <link rel='stylesheet' href='main.css' type='text/css' charset='utf-8' />
   <script src='modernizr.js' type='text/javascript' charset='utf-8'></script>
   <script src='simplesim.js' type='text/javascript' charset='utf-8'></script>
+  <script src='rocks.js' type='text/javascript' charset='utf-8'></script>
   </head>
   <body>
     <script type='text/javascript' charset='utf-8'>
       var system = SimpleSim.System;
+
+      SimpleSim.Classes = Rocks;
+
       system.init(function() {
         for (var i = 1; i < 11; i++) {
-          var size = i * 10;
-          system.add('Item', {
-            width: size,
-            height: size
+          var size = i * 50;
+          system.add('Pebble', {
+            index: i
           });
         }
       }, null, {

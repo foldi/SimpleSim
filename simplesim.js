@@ -64,6 +64,24 @@ SimpleSim = {}; exports = SimpleSim;
     exports.Utils._addEvent(window, 'resize', function(e) {
       System._resize.call(System, e);
     });
+
+    exports.Utils._addEvent(window, 'devicemotion', function(e) {
+
+      var world = System._records.list[0],
+          x = e.accelerationIncludingGravity.x,
+          y = e.accelerationIncludingGravity.y;
+
+      if (window.orientation === 0) {
+        world.gravity.x = x;
+        world.gravity.y = y * -1;
+      } else if (window.orientation === -90) {
+        world.gravity.x = y;
+        world.gravity.y = x;
+      } else {
+        world.gravity.x = y * -1;
+        world.gravity.y = x * -1;
+      }
+    });
 	};
 
   /**
@@ -240,6 +258,7 @@ SimpleSim = {}; exports = SimpleSim;
 
   /**
    * Initializes the object.
+   * @param {Object} options= A map of initial properties.
    */
   Item.prototype.init = function(opt_options) {
 
@@ -253,6 +272,7 @@ SimpleSim = {}; exports = SimpleSim;
     this.mass = (this.width * this.height) * 0.01;
     this.color = options.color || [0, 0, 0];
     this.visibility = options.visibility || 'visible';
+    this.maxSpeed = options.maxSpeed || 5;
   };
 
   /**
@@ -263,6 +283,7 @@ SimpleSim = {}; exports = SimpleSim;
     this.applyForce(this.world.thermal);
     this.applyForce(this.world.gravity);
     this.velocity.add(this.acceleration);
+    this.velocity.limit(this.maxSpeed);
     this._checkWorldEdges();
     this.location.add(this.velocity);
     this.acceleration.mult(0);
@@ -367,6 +388,34 @@ SimpleSim = {}; exports = SimpleSim;
     } else if (target.attachEvent) { // IE
       target.attachEvent("on" + eventType, handler);
     }
+  };
+
+  /**
+   * Extends the properties and methods of a superClass onto a subClass.
+   *
+   * @param {Object} subClass The subClass.
+   * @param {Object} superClass The superClass.
+   */
+  Utils.extend = function(subClass, superClass) {
+    function F() {}
+    F.prototype = superClass.prototype;
+    subClass.prototype = new F;
+    subClass.prototype.constructor = subClass;
+  };
+
+  /**
+   * Generates a psuedo-random number within a range.
+   *
+   * @param {number} low The low end of the range.
+   * @param {number} high The high end of the range.
+   * @param {boolean} [flt] Set to true to return a float.
+   * @returns {number} A number.
+   */
+  Utils.getRandomNumber = function(low, high, flt) {
+    if (flt) {
+      return Math.random()*(high-(low-1)) + low;
+    }
+    return Math.floor(Math.random()*(high-(low-1))) + low;
   };
 
   exports.Utils = Utils;
