@@ -273,6 +273,7 @@ SimpleSim = {}; exports = SimpleSim;
     this.color = options.color || [0, 0, 0];
     this.visibility = options.visibility || 'visible';
     this.maxSpeed = options.maxSpeed || 5;
+    this.bounciness = 0.8;
   };
 
   /**
@@ -312,22 +313,23 @@ SimpleSim = {}; exports = SimpleSim;
         location = this.location,
         velocity = this.velocity,
         width = this.width,
-        height = this.height;
+        height = this.height,
+        bounciness = this.bounciness;
 
     if (location.x + width / 2 > world.width) {
       location.x = world.width - width / 2;
-      velocity.x *= -1;
+      velocity.x *= -1 * bounciness;
     } else if (location.x < width / 2) {
       location.x = width / 2;
-      velocity.x *= -1;
+      velocity.x *= -1 * bounciness;
     }
 
     if (location.y + height / 2 > world.height) {
       location.y = world.height - height / 2;
-      velocity.y *= -1;
+      velocity.y *= -1 * bounciness;
     } else if (location.y < height / 2) {
       location.y = height / 2;
-      velocity.y *= -1;
+      velocity.y *= -1 * bounciness;
     }
   };
 
