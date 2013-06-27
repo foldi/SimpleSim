@@ -60,6 +60,10 @@ SimpleSim = {}; exports = SimpleSim;
 		System._records.list.push(new exports.World(world));
 		setup.call(this);
     this._update();
+
+    exports.Utils._addEvent(window, 'resize', function(e) {
+      System._resize.call(System, e);
+    });
 	};
 
   /**
@@ -137,6 +141,27 @@ SimpleSim = {}; exports = SimpleSim;
         'visibility: ' + props.visibility + ';';
   };
 
+  /**
+   * Repositions all items relative to the viewport size and resets the world bounds.
+   */
+  System._resize = function() {
+
+    var i, max, records = this._records.list, record,
+        viewportSize = exports.Utils.getViewportSize(),
+        world = records[0];
+
+    for (i = 1, max = records.length; i < max; i++) {
+      record = records[i];
+      record.location.x = viewportSize.width * (record.location.x / world.width);
+      record.location.y = viewportSize.height * (record.location.y / world.height);
+    }
+
+    world.width = viewportSize.width;
+    world.height = viewportSize.height;
+    world.location = new exports.Vector((viewportSize.width / 2),
+      (viewportSize.height / 2));
+  };
+
 	exports.System = System;
 
 }(exports));
@@ -168,6 +193,7 @@ SimpleSim = {}; exports = SimpleSim;
     this.thermal = new exports.Vector(0, -0.025);
     this.color = 'transparent';
     this.visibility ='visible';
+    this.cacheVector = new exports.Vector();
   }
 
   /**
@@ -242,13 +268,15 @@ SimpleSim = {}; exports = SimpleSim;
     this.acceleration.mult(0);
   };
 
-/**
- * Adds a force to this object's acceleration.
- *
- * @param {Object} force A Vector representing a force to apply.
- */
+ /**
+  * Adds a force to this object's acceleration.
+  *
+  * @param {Object} force A Vector representing a force to apply.
+  */
   Item.prototype.applyForce = function(force) {
-    var vector = new exports.Vector(force.x, force.y);
+    var vector = this.world.cacheVector;
+    vector.x = force.x;
+    vector.y = force.y;
     vector.div(this.mass);
     this.acceleration.add(vector);
   };
@@ -325,6 +353,22 @@ SimpleSim = {}; exports = SimpleSim;
     return d;
   };
 
+  /**
+   * Adds an event listener.
+   *
+   * @param {Object} target The element to receive the event listener.
+   * @param {string} eventType The event type.
+   * @param {function} The function to run when the event is triggered.
+   * @private
+   */
+  Utils._addEvent = function(target, eventType, handler) {
+    if (target.addEventListener) { // W3C
+      target.addEventListener(eventType, handler, false);
+    } else if (target.attachEvent) { // IE
+      target.attachEvent("on" + eventType, handler);
+    }
+  };
+
   exports.Utils = Utils;
 
 }(exports));
@@ -353,99 +397,6 @@ function Vector(opt_x, opt_y) {
   this.x = x;
   this.y = y;
 }
-
-/**
- * Subtract two vectors.
- *
- * @param {number} v1 The first vector.
- * @param {number} v2 The second vector.
- * @returns {Object} A new Vector.
- */
-Vector.VectorSub = function(v1, v2) {
-  return new Vector(v1.x - v2.x, v1.y - v2.y);
-};
-
-/**
- * Add two vectors.
- *
- * @param {number} v1 The first vector.
- * @param {number} v2 The second vector.
- * @returns {Object} A new Vector.
- */
-Vector.VectorAdd = function(v1, v2) {
-  return new Vector(v1.x + v2.x, v1.y + v2.y);
-};
-
-/**
- * Multiply a vector by a scalar value.
- *
- * @param {number} v A vector.
- * @param {number} n Vector will be multiplied by this number.
- * @returns {Object} A new Vector.
- */
-Vector.VectorMult = function(v, n) {
-  return new Vector(v.x * n, v.y * n);
-};
-
-/**
- * Divide two vectors.
- *
- * @param {number} v A vector.
- * @param {number} n Vector will be divided by this number.
- * @returns {Object} A new Vector.
- */
-Vector.VectorDiv = function(v, n) {
-  return new Vector(v.x / n, v.y / n);
-};
-
-/**
- * Calculates the distance between two vectors.
- *
- * @param {number} v1 The first vector.
- * @param {number} v2 The second vector.
- * @returns {number} The distance between the two vectors.
- */
-Vector.VectorDistance = function(v1, v2) {
-  return Math.sqrt(Math.pow(v2.x - v1.x, 2) + Math.pow(v2.y - v1.y, 2));
-};
-
-/**
- * Get the midpoint between two vectors.
- *
- * @param {number} v1 The first vector.
- * @param {number} v2 The second vector.
- * @returns {Object} A new Vector.
- */
-Vector.VectorMidPoint = function(v1, v2) {
-  return Vector.VectorAdd(v1, v2).div(2); // midpoint = (v1 + v2)/2
-};
-
-/**
- * Get the angle between two vectors.
- *
- * @param {number} v1 The first vector.
- * @param {number} v2 The second vector.
- * @returns {number} An angle.
- */
-Vector.VectorAngleBetween = function(v1, v2) {
-  var dot = v1.dot(v2),
-  theta = Math.acos(dot / (v1.mag() * v2.mag()));
-  return theta;
-};
-
-Vector.prototype.name = 'Vector';
-
-/**
-* Returns an new vector with all properties and methods of the
-* old vector copied to the new vector's prototype.
-*
-* @returns {Object} A vector.
-*/
-Vector.prototype.clone = function() {
-  function F() {}
-  F.prototype = this;
-  return new F;
-};
 
 /**
  * Adds a vector to this vector.
@@ -539,16 +490,6 @@ Vector.prototype.normalize = function() {
 };
 
 /**
- * Calculates the distance between this vector and a passed vector.
- *
- * @param {Object} vector The target vector.
- * @returns {Object} The distance between the two vectors.
- */
-Vector.prototype.distance = function(vector) {
-  return Math.sqrt(Math.pow(vector.x - this.x, 2) + Math.pow(vector.y - this.y, 2));
-};
-
-/**
  * Rotates a vector using a passed angle in radians.
  *
  * @param {number} radians The angle to rotate in radians.
@@ -563,30 +504,6 @@ Vector.prototype.rotate = function(radians) {
   this.x = x * cos - y * sin;
   this.y = x * sin + y * cos;
   return this;
-};
-
-/**
- * Calculates the midpoint between this vector and a passed vector.
- *
- * @param {Object} v1 The first vector.
- * @param {Object} v1 The second vector.
- * @returns {Object} A vector representing the midpoint between the passed vectors.
- */
-Vector.prototype.midpoint = function(vector) {
-  return Vector.VectorAdd(this, vector).div(2);
-};
-
-/**
- * Calulates the dot product.
- *
- * @param {Object} vector The target vector.
- * @returns {Object} A vector.
- */
-Vector.prototype.dot = function(vector) {
-  if (this.z && vector.z) {
-    return this.x * vector.x + this.y * vector.y + this.z * vector.z;
-  }
-  return this.x * vector.x + this.y * vector.y;
 };
 
 exports.Vector = Vector;

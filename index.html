@@ -13,11 +13,13 @@
     <script type='text/javascript' charset='utf-8'>
       var system = SimpleSim.System;
       system.init(function() {
-        system.add('Item');
-        system.add('Item', {
-          width: 40,
-          height: 40
-        });
+        for (var i = 1; i < 11; i++) {
+          var size = i * 10;
+          system.add('Item', {
+            width: size,
+            height: size
+          });
+        }
       }, null, {
         csstransforms3d: Modernizr.csstransforms3d,
         csstransforms: Modernizr.csstransforms

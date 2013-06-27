@@ -168,6 +168,7 @@ SimpleSim = {}; exports = SimpleSim;
     this.thermal = new exports.Vector(0, -0.025);
     this.color = 'transparent';
     this.visibility ='visible';
+    this.cacheVector = new exports.Vector();
   }
 
   /**
@@ -242,13 +243,15 @@ SimpleSim = {}; exports = SimpleSim;
     this.acceleration.mult(0);
   };
 
-/**
- * Adds a force to this object's acceleration.
- *
- * @param {Object} force A Vector representing a force to apply.
- */
+ /**
+  * Adds a force to this object's acceleration.
+  *
+  * @param {Object} force A Vector representing a force to apply.
+  */
   Item.prototype.applyForce = function(force) {
-    var vector = new exports.Vector(force.x, force.y);
+    var vector = this.world.cacheVector;
+    vector.x = force.x;
+    vector.y = force.y;
     vector.div(this.mass);
     this.acceleration.add(vector);
   };
