@@ -3,24 +3,24 @@ SimpleSim = {}; exports = SimpleSim;
 (function(exports) {
 
   /** @namespace */
-	var System = {
-	  name: 'System'
-	};
+  var System = {
+    name: 'System'
+  };
 
   /**
    * Stores references to all items in the system.
    * @private
    */
-	System._records = {
-	  lookup: {},
-	  list: []
-	};
+  System._records = {
+    lookup: {},
+    list: []
+  };
 
   /**
    * Used to create unique ids.
    * @private
    */
-	System._idCount = 0;
+  System._idCount = 0;
 
   /**
    * Holds a transform property based on supportedFeatures.
@@ -43,23 +43,21 @@ SimpleSim = {}; exports = SimpleSim;
    * @param {Object} opt_world= A reference to a DOM element representing the System world.
    * @param {Function} opt_supportedFeatures= A map of supported browser features.
    */
-	System.init = function(opt_setup, opt_world, opt_supportedFeatures) {
+  System.init = function(opt_setup, opt_world, opt_supportedFeatures) {
 
-		var setup = opt_setup || function () {},
-      		world = opt_world || document.body,
+    var setup = opt_setup || function () {},
+          world = opt_world || document.body,
           supportedFeatures = opt_supportedFeatures || null;
 
     if (supportedFeatures.csstransforms3d) {
-      this._stylePosition = '-webkit-transform: translate3d(<x>px, <y>px, 0); -moz-transform: translate3d(<x>px, <y>px, 0); -o-transform: translate3d(<x>px, <y>px, 0); -ms-transform: translate3d(<x>px, <y>px, 0);';
+      this._stylePosition = '-webkit-transform: translate3d(<x>px, <y>px, 0) rotate(<a>deg); -moz-transform: translate3d(<x>px, <y>px, 0) rotate(<a>deg); -o-transform: translate3d(<x>px, <y>px, 0) rotate(<a>deg); -ms-transform: translate3d(<x>px, <y>px, 0) rotate(<a>deg);';
     } else if (supportedFeatures.csstransforms) {
-      this._stylePosition = '-webkit-transform: translate(<x>px, <y>px); -moz-transform: translate(<x>px, <y>px); -o-transform: translate(<x>px, <y>px); -ms-transform: translate(<x>px, <y>px);';
+      this._stylePosition = '-webkit-transform: translate(<x>px, <y>px) rotate(<a>deg); -moz-transform: translate(<x>px, <y>px) rotate(<a>deg); -o-transform: translate(<x>px, <y>px) rotate(<a>deg); -ms-transform: translate(<x>px, <y>px) rotate(<a>deg);';
     } else {
       this._stylePosition = 'position: absolute; left: <x>px; top: <y>px;';
     }
 
-		System._records.list.push(new exports.World(world));
-		setup.call(this);
-    this._update();
+    System._records.list.push(new exports.World(world));
 
     exports.Utils._addEvent(window, 'resize', function(e) {
       System._resize.call(System, e);
@@ -82,7 +80,39 @@ SimpleSim = {}; exports = SimpleSim;
         world.gravity.y = x * -1;
       }
     });
-	};
+
+    exports.Utils._addEvent(window, 'keyup', function(e) {
+      System._keyup.call(System, e);
+    });
+
+    setup.call(this);
+    this._setup = setup;
+    this._update();
+
+
+  };
+
+  /**
+   * Handles keyup events.
+   *
+   * @param {Object} e An event.
+   */
+  System._keyup = function(e) {
+
+    var world = this._records.list[0];
+
+    switch(e.keyCode) {
+      case 39:
+        System._stepForward(); // right arrow: step forward
+      break;
+      case 80: // p; pause/play
+        world.pauseStep = !world.pauseStep;
+        break;
+      case 82: // r; reset
+        System._resetSystem();
+        break;
+    }
+  };
 
   /**
    * Adds an object to the system.
@@ -120,13 +150,35 @@ SimpleSim = {}; exports = SimpleSim;
     var i, records = System._records.list, record;
 
     for (i = records.length - 1; i >= 0; i -= 1) {
-      records[i].step();
+      record = records[i];
+      if (!record.world.pauseStep) {
+        record.step();
+      }
     }
 
     for (i = records.length - 1; i >= 0; i -= 1) {
       records[i].draw();
     }
     window.requestAnimFrame(System._update);
+  };
+
+  /**
+   * Pauses the system and processes one step in records.
+   * @private
+   */
+  System._stepForward = function() {
+
+    var i, records = System._records.list,
+        world = this._records.list[0];
+
+    world.pauseStep = true;
+
+    for (i = records.length - 1; i >= 0; i -= 1) {
+      records[i].step();
+    }
+    for (i = records.length - 1; i >= 0; i -= 1) {
+      records[i].draw();
+    }
   };
 
   /**
@@ -143,7 +195,8 @@ SimpleSim = {}; exports = SimpleSim;
       color1: obj.color[1],
       color2: obj.color[2],
       visibility: obj.visibility,
-      borderRadius: obj.borderRadius
+      borderRadius: obj.borderRadius,
+      a: obj.angle
     });
     obj.el.style.cssText = cssText;
   };
@@ -154,7 +207,7 @@ SimpleSim = {}; exports = SimpleSim;
    * @param {Object} props A map of object properties.
    */
   System.getCSSText = function(props) {
-    return this._stylePosition.replace(/<x>/g, props.x).replace(/<y>/g, props.y) + ' width: ' +
+    return this._stylePosition.replace(/<x>/g, props.x).replace(/<y>/g, props.y).replace(/<a>/g, props.a) + ' width: ' +
         props.width + 'px; height: ' + props.height + 'px; background-color: ' +
         'rgb(' + props.color0 + ', ' + props.color1 + ', ' + props.color2 + ');' +
         'visibility: ' + props.visibility + '; border-radius: ' + props.borderRadius + '%';
@@ -181,7 +234,28 @@ SimpleSim = {}; exports = SimpleSim;
       (viewportSize.height / 2));
   };
 
-	exports.System = System;
+  /**
+   * Resets the system.
+   *
+   * @param {boolean} opt_noRestart= Pass true to not restart the system.
+   * @private
+   */
+  System._resetSystem = function(opt_noRestart) {
+
+    var world = this._records.list[0],
+        viewportSize = exports.Utils.getViewportSize();
+
+    world.pauseStep = false;
+    while(world.el.firstChild) {
+      world.el.removeChild(world.el.firstChild);
+    }
+    world.location = new exports.Vector((viewportSize.width / 2),
+      (viewportSize.height / 2));
+    this._records.list = this._records.list.splice(0, 1);
+    System._setup.call(System);
+  };
+
+  exports.System = System;
 
 }(exports));
 
@@ -194,7 +268,7 @@ SimpleSim = {}; exports = SimpleSim;
    * @param {Object} el The DOM element representing the world.
    * @constructor
    */
-	function World(el) {
+  function World(el) {
 
     var viewportSize = exports.Utils.getViewportSize();
 
@@ -207,13 +281,22 @@ SimpleSim = {}; exports = SimpleSim;
     this.width = viewportSize.width;
     this.height = viewportSize.height;
     this.location = new exports.Vector(viewportSize.width / 2, viewportSize.height / 2);
+    this.angle = 0;
     this.gravity = new exports.Vector(0, 0.1);
     this.wind = new exports.Vector(0.05, 0);
     this.thermal = new exports.Vector(0, -0.025);
-    this.color = 'transparent';
+    this.color = [230, 230, 230];
     this.visibility ='visible';
     this.cacheVector = new exports.Vector();
+    this.pauseStep = false;
+    this.camera = new exports.Vector();
   }
+
+  /**
+   * Worlds do not have worlds. However, assigning a
+   * blank object avoid coding extra logic in System._update.
+   */
+  World.prototype.world = {};
 
   /**
    * Updates properties.
@@ -227,7 +310,7 @@ SimpleSim = {}; exports = SimpleSim;
     exports.System._draw(this);
   };
 
-	exports.World = World;
+  exports.World = World;
 
 }(exports));
 
@@ -276,6 +359,9 @@ SimpleSim = {}; exports = SimpleSim;
     this.maxSpeed = options.maxSpeed || 5;
     this.bounciness = options.bounciness || 0.75;
     this.borderRadius = options.borderRadius || 0;
+    this.angle = options.angle || 0;
+    this.checkWorldEdges = options.checkWorldEdges === undefined ? true : options.checkWorldEdges;
+    this.controlCamera = options.controlCamera === undefined ? false : options.controlCamera;
   };
 
   /**
@@ -287,16 +373,22 @@ SimpleSim = {}; exports = SimpleSim;
     this.applyForce(this.world.gravity);
     this.velocity.add(this.acceleration);
     this.velocity.limit(this.maxSpeed);
-    this._checkWorldEdges();
+    if (this.checkWorldEdges) {
+      this._checkWorldEdges();
+    }
+    if (this.controlCamera) {
+      this._checkCameraEdges();
+    }
     this.location.add(this.velocity);
+    this.angle = this.location.x;
     this.acceleration.mult(0);
   };
 
- /**
-  * Adds a force to this object's acceleration.
-  *
-  * @param {Object} force A Vector representing a force to apply.
-  */
+  /**
+   * Adds a force to this object's acceleration.
+   *
+   * @param {Object} force A Vector representing a force to apply.
+   */
   Item.prototype.applyForce = function(force) {
     var vector = this.world.cacheVector;
     vector.x = force.x;
@@ -333,6 +425,15 @@ SimpleSim = {}; exports = SimpleSim;
       location.y = height / 2;
       velocity.y *= -1 * bounciness;
     }
+  };
+
+  /**
+   * Moves the world in the opposite direction of the item.
+   */
+  Item.prototype._checkCameraEdges = function() {
+    this.world.camera.x = this.velocity.x;
+    this.world.camera.y = this.velocity.y;
+    this.world.location.add(this.world.camera.mult(-1));
   };
 
   /**

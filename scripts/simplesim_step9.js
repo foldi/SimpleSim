@@ -50,9 +50,9 @@ SimpleSim = {}; exports = SimpleSim;
           supportedFeatures = opt_supportedFeatures || null;
 
     if (supportedFeatures.csstransforms3d) {
-      this._stylePosition = '-webkit-transform: translate3d(<x>px, <y>px, 0); -moz-transform: translate3d(<x>px, <y>px, 0); -o-transform: translate3d(<x>px, <y>px, 0); -ms-transform: translate3d(<x>px, <y>px, 0);';
+      this._stylePosition = '-webkit-transform: translate3d(<x>px, <y>px, 0) rotate(<a>deg); -moz-transform: translate3d(<x>px, <y>px, 0) rotate(<a>deg); -o-transform: translate3d(<x>px, <y>px, 0) rotate(<a>deg); -ms-transform: translate3d(<x>px, <y>px, 0) rotate(<a>deg);';
     } else if (supportedFeatures.csstransforms) {
-      this._stylePosition = '-webkit-transform: translate(<x>px, <y>px); -moz-transform: translate(<x>px, <y>px); -o-transform: translate(<x>px, <y>px); -ms-transform: translate(<x>px, <y>px);';
+      this._stylePosition = '-webkit-transform: translate(<x>px, <y>px) rotate(<a>deg); -moz-transform: translate(<x>px, <y>px) rotate(<a>deg); -o-transform: translate(<x>px, <y>px) rotate(<a>deg); -ms-transform: translate(<x>px, <y>px) rotate(<a>deg);';
     } else {
       this._stylePosition = 'position: absolute; left: <x>px; top: <y>px;';
     }
@@ -120,7 +120,8 @@ SimpleSim = {}; exports = SimpleSim;
       color0: obj.color[0],
       color1: obj.color[1],
       color2: obj.color[2],
-      visibility: obj.visibility
+      visibility: obj.visibility,
+      a: obj.angle
     });
     obj.el.style.cssText = cssText;
   };
@@ -131,10 +132,10 @@ SimpleSim = {}; exports = SimpleSim;
    * @param {Object} props A map of object properties.
    */
   System.getCSSText = function(props) {
-    return this._stylePosition.replace(/<x>/g, props.x).replace(/<y>/g, props.y) + ' width: ' +
+    return this._stylePosition.replace(/<x>/g, props.x).replace(/<y>/g, props.y).replace(/<a>/g, props.a) + ' width: ' +
         props.width + 'px; height: ' + props.height + 'px; background-color: ' +
         'rgb(' + props.color0 + ', ' + props.color1 + ', ' + props.color2 + ');' +
-        'visibility: ' + props.visibility + ';';
+        'visibility: ' + props.visibility + '; border-radius: ' + props.borderRadius + '%';
   };
 
 	exports.System = System;
@@ -229,6 +230,7 @@ SimpleSim = {}; exports = SimpleSim;
     this.color = options.color || [0, 0, 0];
     this.visibility = options.visibility || 'visible';
     this.checkWorldEdges = options.checkWorldEdges === undefined ? true : options.checkWorldEdges;
+    this.angle = options.angle || 0;
   };
 
   /**
@@ -243,6 +245,7 @@ SimpleSim = {}; exports = SimpleSim;
       this._checkWorldEdges();
     }
     this.location.add(this.velocity);
+    this.angle = this.location.x;
     this.acceleration.mult(0);
   };
 
@@ -329,6 +332,34 @@ SimpleSim = {}; exports = SimpleSim;
       d.height = undefined;
     }
     return d;
+  };
+
+  /**
+   * Extends the properties and methods of a superClass onto a subClass.
+   *
+   * @param {Object} subClass The subClass.
+   * @param {Object} superClass The superClass.
+   */
+  Utils.extend = function(subClass, superClass) {
+    function F() {}
+    F.prototype = superClass.prototype;
+    subClass.prototype = new F;
+    subClass.prototype.constructor = subClass;
+  };
+
+  /**
+   * Generates a psuedo-random number within a range.
+   *
+   * @param {number} low The low end of the range.
+   * @param {number} high The high end of the range.
+   * @param {boolean} [flt] Set to true to return a float.
+   * @returns {number} A number.
+   */
+  Utils.getRandomNumber = function(low, high, flt) {
+    if (flt) {
+      return Math.random()*(high-(low-1)) + low;
+    }
+    return Math.floor(Math.random()*(high-(low-1))) + low;
   };
 
   exports.Utils = Utils;
