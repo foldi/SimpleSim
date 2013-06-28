@@ -228,6 +228,7 @@ SimpleSim = {}; exports = SimpleSim;
     this.mass = (this.width * this.height) * 0.01;
     this.color = options.color || [0, 0, 0];
     this.visibility = options.visibility || 'visible';
+    this.checkWorldEdges = options.checkWorldEdges === undefined ? true : options.checkWorldEdges;
   };
 
   /**
@@ -238,7 +239,9 @@ SimpleSim = {}; exports = SimpleSim;
     this.applyForce(this.world.thermal);
     this.applyForce(this.world.gravity);
     this.velocity.add(this.acceleration);
-    this._checkWorldEdges();
+    if (this.checkWorldEdges) {
+      this._checkWorldEdges();
+    }
     this.location.add(this.velocity);
     this.acceleration.mult(0);
   };

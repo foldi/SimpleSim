@@ -59,6 +59,7 @@ SimpleSim = {}; exports = SimpleSim;
 
 		System._records.list.push(new exports.World(world));
 		setup.call(this);
+    this._setup = setup;
     this._update();
 
     exports.Utils._addEvent(window, 'resize', function(e) {
@@ -82,7 +83,61 @@ SimpleSim = {}; exports = SimpleSim;
         world.gravity.y = x * -1;
       }
     });
+
+    exports.Utils._addEvent(window, 'keyup', function(e) {
+      System._keyup.call(System, e);
+    });
+
+    this.mouse = {
+      location: new exports.Vector(),
+      lastLocation: new exports.Vector(),
+      velocity: new exports.Vector()
+    };
+    exports.Utils._addEvent(document, 'mousemove', function(e) {
+      System._recordMouseLoc.call(System, e);
+    });
 	};
+
+  /**
+   * Handles keyup events.
+   *
+   * @param {Object} e An event.
+   */
+  System._keyup = function(e) {
+
+    var world = this._records.list[0];
+
+    switch(e.keyCode) {
+      case 39:
+        System._stepForward(); // right arrow: step forward
+      break;
+      case 80: // p; pause/play
+        world.pauseStep = !world.pauseStep;
+        break;
+      case 82: // r; reset
+        System._resetSystem();
+        break;
+    }
+  };
+
+  /**
+   * Saves the mouse velocity and location relative to the browser viewport.
+   * @param {Object} e An event.
+   * @private
+   */
+  System._recordMouseLoc = function(e) {
+    this.mouse.lastLocation.x = this.mouse.location.x;
+    this.mouse.lastLocation.y = this.mouse.location.y;
+    if (e.pageX && e.pageY) {
+      this.mouse.location.x = e.pageX;
+      this.mouse.location.y = e.pageY;
+    } else if (e.clientX && e.clientY) {
+      this.mouse.location.x = e.clientX;
+      this.mouse.location.y = e.clientY;
+    }
+    this.mouse.velocity.x = this.mouse.lastLocation.x - this.mouse.location.x;
+    this.mouse.velocity.y = this.mouse.lastLocation.y - this.mouse.location.y;
+  };
 
   /**
    * Adds an object to the system.
@@ -120,13 +175,35 @@ SimpleSim = {}; exports = SimpleSim;
     var i, records = System._records.list, record;
 
     for (i = records.length - 1; i >= 0; i -= 1) {
-      records[i].step();
+      record = records[i];
+      if (record.world && !record.world.pauseStep) {
+        record.step();
+      }
     }
 
     for (i = records.length - 1; i >= 0; i -= 1) {
       records[i].draw();
     }
     window.requestAnimFrame(System._update);
+  };
+
+  /**
+   * Pauses the system and processes one step in records.
+   * @private
+   */
+  System._stepForward = function() {
+
+    var i, records = System._records.list,
+        world = this._records.list[0];
+
+    world.pauseStep = true;
+
+    for (i = records.length - 1; i >= 0; i -= 1) {
+      records[i].step();
+    }
+    for (i = records.length - 1; i >= 0; i -= 1) {
+      records[i].draw();
+    }
   };
 
   /**
@@ -142,7 +219,8 @@ SimpleSim = {}; exports = SimpleSim;
       color0: obj.color[0],
       color1: obj.color[1],
       color2: obj.color[2],
-      visibility: obj.visibility
+      visibility: obj.visibility,
+      borderRadius: obj.borderRadius
     });
     obj.el.style.cssText = cssText;
   };
@@ -156,7 +234,7 @@ SimpleSim = {}; exports = SimpleSim;
     return this._stylePosition.replace(/<x>/g, props.x).replace(/<y>/g, props.y) + ' width: ' +
         props.width + 'px; height: ' + props.height + 'px; background-color: ' +
         'rgb(' + props.color0 + ', ' + props.color1 + ', ' + props.color2 + ');' +
-        'visibility: ' + props.visibility + ';';
+        'visibility: ' + props.visibility + '; border-radius: ' + props.borderRadius + '%';
   };
 
   /**
@@ -178,6 +256,27 @@ SimpleSim = {}; exports = SimpleSim;
     world.height = viewportSize.height;
     world.location = new exports.Vector((viewportSize.width / 2),
       (viewportSize.height / 2));
+  };
+
+  /**
+   * Resets the system.
+   *
+   * @param {boolean} opt_noRestart= Pass true to not restart the system.
+   * @private
+   */
+  System._resetSystem = function(opt_noRestart) {
+
+    var world = this._records.list[0],
+        viewportSize = exports.Utils.getViewportSize();
+
+    world.pauseStep = false;
+    while(world.el.firstChild) {
+      world.el.removeChild(world.el.firstChild);
+    }
+    world.location = new exports.Vector((viewportSize.width / 2),
+      (viewportSize.height / 2));
+    this._records.list = this._records.list.splice(0, 1);
+    System._setup.call(System);
   };
 
 	exports.System = System;
@@ -209,9 +308,11 @@ SimpleSim = {}; exports = SimpleSim;
     this.gravity = new exports.Vector(0, 0.1);
     this.wind = new exports.Vector(0.05, 0);
     this.thermal = new exports.Vector(0, -0.025);
-    this.color = 'transparent';
+    this.color = [230, 230, 230];
     this.visibility ='visible';
     this.cacheVector = new exports.Vector();
+    this.pauseStep = false;
+    this.camera = new exports.Vector();
   }
 
   /**
@@ -269,11 +370,14 @@ SimpleSim = {}; exports = SimpleSim;
     this.location = options.location || new exports.Vector(this.world.width / 2, this.world.height / 2);
     this.width = options.width || 20;
     this.height = options.height || 20;
-    this.mass = (this.width * this.height) * 0.01;
+    this.mass = (this.width * this.height) * 0.025;
     this.color = options.color || [0, 0, 0];
     this.visibility = options.visibility || 'visible';
     this.maxSpeed = options.maxSpeed || 5;
-    this.bounciness = 0.8;
+    this.bounciness = options.bounciness || 0.75;
+    this.borderRadius = options.borderRadius || 0;
+    this.checkWorldEdges = options.checkWorldEdges === undefined ? true : options.checkWorldEdges;
+    this.controlCamera = options.controlCamera === undefined ? false : options.controlCamera;
   };
 
   /**
@@ -285,16 +389,21 @@ SimpleSim = {}; exports = SimpleSim;
     this.applyForce(this.world.gravity);
     this.velocity.add(this.acceleration);
     this.velocity.limit(this.maxSpeed);
-    this._checkWorldEdges();
+    if (this.checkWorldEdges) {
+      this._checkWorldEdges();
+    }
+    if (this.controlCamera) {
+      this._checkCameraEdges();
+    }
     this.location.add(this.velocity);
     this.acceleration.mult(0);
   };
 
- /**
-  * Adds a force to this object's acceleration.
-  *
-  * @param {Object} force A Vector representing a force to apply.
-  */
+  /**
+   * Adds a force to this object's acceleration.
+   *
+   * @param {Object} force A Vector representing a force to apply.
+   */
   Item.prototype.applyForce = function(force) {
     var vector = this.world.cacheVector;
     vector.x = force.x;
@@ -331,6 +440,15 @@ SimpleSim = {}; exports = SimpleSim;
       location.y = height / 2;
       velocity.y *= -1 * bounciness;
     }
+  };
+
+  /**
+   * Moves the world in the opposite direction of the item.
+   */
+  Item.prototype._checkCameraEdges = function() {
+    this.world.camera.x = this.velocity.x;
+    this.world.camera.y = this.velocity.y;
+    this.world.location.add(this.world.camera.mult(-1));
   };
 
   /**
