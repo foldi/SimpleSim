@@ -58,6 +58,30 @@ SimpleSim = {}; exports = SimpleSim;
     }
 
 		System._records.list.push(new exports.World(world));
+
+    exports.Utils._addEvent(window, 'resize', function(e) {
+      System._resize.call(System, e);
+    });
+
+
+    exports.Utils._addEvent(window, 'devicemotion', function(e) {
+
+      var world = System._records.list[0],
+          x = e.accelerationIncludingGravity.x,
+          y = e.accelerationIncludingGravity.y;
+
+      if (window.orientation === 0) {
+        world.gravity.x = x;
+        world.gravity.y = y * -1;
+      } else if (window.orientation === -90) {
+        world.gravity.x = y;
+        world.gravity.y = x;
+      } else {
+        world.gravity.x = y * -1;
+        world.gravity.y = x * -1;
+      }
+    });
+
 		setup.call(this);
     this._update();
 	};
@@ -121,6 +145,7 @@ SimpleSim = {}; exports = SimpleSim;
       color1: obj.color[1],
       color2: obj.color[2],
       visibility: obj.visibility,
+      borderRadius: obj.borderRadius,
       a: obj.angle
     });
     obj.el.style.cssText = cssText;
@@ -136,6 +161,27 @@ SimpleSim = {}; exports = SimpleSim;
         props.width + 'px; height: ' + props.height + 'px; background-color: ' +
         'rgb(' + props.color0 + ', ' + props.color1 + ', ' + props.color2 + ');' +
         'visibility: ' + props.visibility + '; border-radius: ' + props.borderRadius + '%';
+  };
+
+  /**
+   * Repositions all items relative to the viewport size and resets the world bounds.
+   */
+  System._resize = function() {
+
+    var i, max, records = this._records.list, record,
+        viewportSize = exports.Utils.getViewportSize(),
+        world = records[0];
+
+    for (i = 1, max = records.length; i < max; i++) {
+      record = records[i];
+      record.location.x = viewportSize.width * (record.location.x / world.width);
+      record.location.y = viewportSize.height * (record.location.y / world.height);
+    }
+
+    world.width = viewportSize.width;
+    world.height = viewportSize.height;
+    world.location = new exports.Vector((viewportSize.width / 2),
+      (viewportSize.height / 2));
   };
 
 	exports.System = System;
@@ -229,6 +275,10 @@ SimpleSim = {}; exports = SimpleSim;
     this.mass = (this.width * this.height) * 0.01;
     this.color = options.color || [0, 0, 0];
     this.visibility = options.visibility || 'visible';
+    this.maxSpeed = options.maxSpeed || 5;
+    this.bounciness = options.bounciness || 0.75;
+    this.borderRadius = options.borderRadius || 0;
+    this.angle = options.angle || 0;
     this.checkWorldEdges = options.checkWorldEdges === undefined ? true : options.checkWorldEdges;
     this.angle = options.angle || 0;
   };
@@ -241,6 +291,7 @@ SimpleSim = {}; exports = SimpleSim;
     this.applyForce(this.world.thermal);
     this.applyForce(this.world.gravity);
     this.velocity.add(this.acceleration);
+    this.velocity.limit(this.maxSpeed);
     if (this.checkWorldEdges) {
       this._checkWorldEdges();
     }
@@ -272,22 +323,23 @@ SimpleSim = {}; exports = SimpleSim;
         location = this.location,
         velocity = this.velocity,
         width = this.width,
-        height = this.height;
+        height = this.height,
+        bounciness = this.bounciness;
 
     if (location.x + width / 2 > world.width) {
       location.x = world.width - width / 2;
-      velocity.x *= -1;
+      velocity.x *= -1 * bounciness;
     } else if (location.x < width / 2) {
       location.x = width / 2;
-      velocity.x *= -1;
+      velocity.x *= -1 * bounciness;
     }
 
     if (location.y + height / 2 > world.height) {
       location.y = world.height - height / 2;
-      velocity.y *= -1;
+      velocity.y *= -1 * bounciness;
     } else if (location.y < height / 2) {
       location.y = height / 2;
-      velocity.y *= -1;
+      velocity.y *= -1 * bounciness;
     }
   };
 
@@ -332,6 +384,22 @@ SimpleSim = {}; exports = SimpleSim;
       d.height = undefined;
     }
     return d;
+  };
+
+  /**
+   * Adds an event listener.
+   *
+   * @param {Object} target The element to receive the event listener.
+   * @param {string} eventType The event type.
+   * @param {function} The function to run when the event is triggered.
+   * @private
+   */
+  Utils._addEvent = function(target, eventType, handler) {
+    if (target.addEventListener) { // W3C
+      target.addEventListener(eventType, handler, false);
+    } else if (target.attachEvent) { // IE
+      target.attachEvent("on" + eventType, handler);
+    }
   };
 
   /**
