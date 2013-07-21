@@ -8,6 +8,8 @@ You can view the final mobile simulator in here:
 
 http://youtu.be/U9toZCg_7tM
 
+You can find the raw files in the 'steps' folder. The release files for SimpleSim are in the 'release' folder.
+
 The steps and links to view them in action are below:
 
 #### Step 1
