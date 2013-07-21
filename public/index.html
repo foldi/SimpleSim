@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv='content-type' content='text/html; charset=UTF-8' />
+  <meta name='viewport' content='user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0' />
+  <meta name='apple-mobile-web-app-capable' content='yes' />
+  <title>Simple Simulator</title>
+  <link rel='stylesheet' href='css/SimpleSim.min.css' type='text/css' charset='utf-8' />
+  <script src='scripts/modernizr.js' type='text/javascript' charset='utf-8'></script>
+  <script src='scripts/SimpleSim.min.js' type='text/javascript' charset='utf-8'></script>
+  <script src='scripts/rocks.js' type='text/javascript' charset='utf-8'></script>
+  </head>
+  <body>
+    <script type='text/javascript' charset='utf-8'>
+      var system = SimpleSim.System;
+
+      SimpleSim.Classes = Rocks;
+
+      system.init(function() {
+        for (var i = 1; i < 11; i++) {
+          system.add('Pebble', {
+            index: i
+          });
+          if (i < 7) {
+            system.add('Boulder', {
+              index: i
+            });
+          }
+        }
+      }, null, {
+        csstransforms3d: Modernizr.csstransforms3d,
+        csstransforms: Modernizr.csstransforms
+      });
+    </script>
+  </body>
+</html>
