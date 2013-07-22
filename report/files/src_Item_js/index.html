@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title></title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap-3.0.0-wip.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome-ie7.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="brand" href="http://github.com/jsoverson/plato">Plato on Github</a>
+    <ul class="nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/Item.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="span6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"></i></a></h2>
+      <p class="stat">60.64</p>
+    </div>
+    <div class="span6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC"></i></h2>
+      <p class="stat">119</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="span6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="span6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="span6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty"></i></a></h2>
+      <p class="stat">59.55</p>
+    </div>
+    <div class="span6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs"></i></a></h2>
+      <p class="stat">1.41</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="span6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="span6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="span12">/**
+ * Creates a new Item.
+ *
+ * @param {Object} options A map of initial properties.
+ * @constructor
+ */
+function Item(options) {
+
+  if (!options || !options.world || typeof options.world !== &#039;object&#039;) {
+    throw new Error(&#039;Item: A valid DOM object is required for a new Item.&#039;);
+  }
+
+  this.world = options.world;
+  this.name = options.name || &#039;Item&#039;;
+  this.id = this.name + exports.System.getNewId();
+
+  this.el = document.createElement(&#039;div&#039;);
+  this.el.id = this.id;
+  this.el.className = &#039;item &#039; + this.name.toLowerCase();
+  this.el.style.visibility = &#039;hidden&#039;;
+  this.world.el.appendChild(this.el);
+}
+
+/**
+ * Initializes the object.
+ * @param {Object} options= A map of initial properties.
+ */
+Item.prototype.init = function(opt_options) {
+
+  var options = opt_options || {};
+
+  this.acceleration = options.acceleration || new exports.Vector();
+  this.velocity = options.velocity || new exports.Vector();
+  this.location = options.location || new exports.Vector(this.world.width / 2, this.world.height / 2);
+  this.width = options.width || 20;
+  this.height = options.height || 20;
+  this.mass = (this.width * this.height) * 0.025;
+  this.color = options.color || [0, 0, 0];
+  this.visibility = options.visibility || &#039;visible&#039;;
+  this.maxSpeed = options.maxSpeed || 5;
+  this.bounciness = options.bounciness || 0.75;
+  this.borderRadius = options.borderRadius || 0;
+  this.angle = options.angle || 0;
+  this.checkWorldEdges = options.checkWorldEdges === undefined ? true : options.checkWorldEdges;
+  this.controlCamera = options.controlCamera === undefined ? false : options.controlCamera;
+};
+
+/**
+ * Updates properties.
+ */
+Item.prototype.step = function() {
+  this.applyForce(this.world.wind);
+  this.applyForce(this.world.thermal);
+  this.applyForce(this.world.gravity);
+  this.velocity.add(this.acceleration);
+  this.velocity.limit(this.maxSpeed);
+  if (this.checkWorldEdges) {
+    this._checkWorldEdges();
+  }
+  if (this.controlCamera) {
+    this._checkCameraEdges();
+  }
+  this.location.add(this.velocity);
+  this.angle = this.location.x;
+  this.acceleration.mult(0);
+};
+
+/**
+ * Adds a force to this object&#039;s acceleration.
+ *
+ * @param {Object} force A Vector representing a force to apply.
+ */
+Item.prototype.applyForce = function(force) {
+  var vector = this.world.cacheVector;
+  vector.x = force.x;
+  vector.y = force.y;
+  vector.div(this.mass);
+  this.acceleration.add(vector);
+};
+
+/**
+ * Determines if this object is outside the world bounds.
+ * @private
+ */
+Item.prototype._checkWorldEdges = function() {
+
+  var world = this.world,
+      location = this.location,
+      velocity = this.velocity,
+      width = this.width,
+      height = this.height,
+      bounciness = this.bounciness;
+
+  if (location.x + width / 2 &gt; world.width) {
+    location.x = world.width - width / 2;
+    velocity.x *= -1 * bounciness;
+  } else if (location.x &lt; width / 2) {
+    location.x = width / 2;
+    velocity.x *= -1 * bounciness;
+  }
+
+  if (location.y + height / 2 &gt; world.height) {
+    location.y = world.height - height / 2;
+    velocity.y *= -1 * bounciness;
+  } else if (location.y &lt; height / 2) {
+    location.y = height / 2;
+    velocity.y *= -1 * bounciness;
+  }
+};
+
+/**
+ * Moves the world in the opposite direction of the item.
+ */
+Item.prototype._checkCameraEdges = function() {
+  this.world.camera.x = this.velocity.x;
+  this.world.camera.y = this.velocity.y;
+  this.world.location.add(this.world.camera.mult(-1));
+};
+
+/**
+ * Updates the corresponding DOM element&#039;s style property.
+ */
+Item.prototype.draw = function() {
+  exports.System._draw(this);
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ complexity.cyclomatic }} <br>
+    Length : {{ complexity.halstead.length }} <br>
+    Difficulty : {{ complexity.halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ complexity.halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>
