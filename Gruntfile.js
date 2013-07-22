@@ -125,6 +125,13 @@ module.exports = function(grunt) {
         specs: 'specs/*.js'
       }
 
+    },
+    plato: {
+      your_task: {
+        files: {
+          'report': ['src/*.js']
+        }
+      }
     }
   });
 
@@ -136,8 +143,10 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-jasmine');
   grunt.loadNpmTasks('grunt-contrib-csslint');
   grunt.loadNpmTasks('grunt-contrib-cssmin');
+  grunt.loadNpmTasks('grunt-plato');
 
   grunt.registerTask('default', ['jshint', 'cssmin', 'jasmine', 'concat', 'uglify', 'copy']);
   grunt.registerTask('test', ['jshint', 'jasmine']);
+  grunt.registerTask('complexity', ['plato']);
 };
 
