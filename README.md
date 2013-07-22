@@ -110,5 +110,6 @@ http://bl.ocks.org/foldi/raw/5883853/
 http://bl.ocks.org/foldi/raw/5884986/
 
 
+### Misc
 * Run 'grunt complexity' to generate a cyclomatic complexity report in a 'report' folder.
 * A pre-commit hook runs plato for measuring complexity and 'grunt test' to lint and test.
