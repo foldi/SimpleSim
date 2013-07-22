@@ -111,4 +111,4 @@ http://bl.ocks.org/foldi/raw/5884986/
 
 
 
-
+A pre-commit hook runs plato for measuring cyclomatic complexity and 'grunt test' to lint and test.
