@@ -27,11 +27,18 @@ function Item(options) {
  */
 Item.prototype.init = function(opt_options) {
 
-  var options = opt_options || {};
+  var i, options = opt_options || {};
+
+  for (i in options) {
+    if (options.hasOwnProperty(i)) {
+      this[i] = options[i];
+    }
+  }
 
   this.acceleration = options.acceleration || new exports.Vector();
   this.velocity = options.velocity || new exports.Vector();
   this.location = options.location || new exports.Vector(this.world.width / 2, this.world.height / 2);
+  this.initLocation = options.initLocation || new exports.Vector(this.location.x, this.location.y);
   this.width = options.width || 20;
   this.height = options.height || 20;
   this.mass = (this.width * this.height) * 0.025;

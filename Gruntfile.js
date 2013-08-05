@@ -30,7 +30,7 @@ module.exports = function(grunt) {
 
   lDevRelease = 'release/' + latest + '.js';
   lMinRelease = 'release/' + latest + '.min.js';
-  publicRelease = 'public/scripts/' + latest + '.min.js';
+  publicRelease = 'public/scripts/' + latest + '.js';
 
   grunt.initConfig({
     pkg : grunt.file.readJSON('package.json'),
@@ -106,7 +106,7 @@ module.exports = function(grunt) {
         dest: 'release/' + latest + '.min.css'
       },
       public: { // copy non-minified file
-        src: lMinRelease,
+        src: lDevRelease,
         dest: publicRelease
       },
       publicCSS: {
@@ -137,7 +137,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-csslint');
   grunt.loadNpmTasks('grunt-contrib-cssmin');
 
-  grunt.registerTask('default', ['jshint', 'cssmin', 'jasmine', 'concat', 'uglify', 'copy']);
+  grunt.registerTask('default', ['jshint', 'cssmin', 'jasmine', 'concat', 'copy']);
   grunt.registerTask('test', ['jshint', 'jasmine']);
 };
 

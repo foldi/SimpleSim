@@ -2,11 +2,13 @@
  * Creates a new World.
  *
  * @param {Object} el The DOM element representing the world.
+ * @param {Object} [opt_options=] A map of initial properties.
  * @constructor
  */
-function World(el) {
+function World(el, opt_options) {
 
-  var viewportSize = exports.Utils.getViewportSize();
+  var options = opt_options || {},
+      viewportSize = exports.Utils.getViewportSize();
 
   if (!el || typeof el !== 'object') {
     throw new Error('World: A valid DOM object is required for a new World.');
@@ -14,18 +16,21 @@ function World(el) {
 
   this.el = el;
   this.el.className = 'world';
-  this.width = viewportSize.width;
-  this.height = viewportSize.height;
-  this.location = new exports.Vector(viewportSize.width / 2, viewportSize.height / 2);
-  this.angle = 0;
-  this.gravity = new exports.Vector(0, 0.1);
-  this.wind = new exports.Vector();
-  this.thermal = new exports.Vector(0, -0.025);
-  this.color = [230, 230, 230];
-  this.visibility ='visible';
+  this.width = options.width || viewportSize.width;
+  this.height = options.height || viewportSize.height;
+  this.location = options.location || new exports.Vector(viewportSize.width / 2,
+      viewportSize.height / 2);
+  this.angle = options.angle === undefined ? 0 : options.angle;
+  this.gravity = options.gravity || new exports.Vector(0, 0.1);
+  this.wind = options.wind || new exports.Vector();
+  this.thermal = options.thermal || new exports.Vector();
+  this.color = options.color || [230, 230, 230];
+  this.visibility = options.visibility || 'visible';
   this.cacheVector = new exports.Vector();
   this.pauseStep = false;
   this.camera = new exports.Vector();
+
+  this._pool = []; // object pool
 }
 
 /**
@@ -37,12 +42,7 @@ World.prototype.world = {};
 /**
  * Updates properties.
  */
-World.prototype.step = function() {
-  var dx = exports.System.mouse.location.x - this.width / 2,
-      dy = exports.System.mouse.location.y - this.height / 2;
-  this.gravity.x = dx * 0.01;
-  this.gravity.y = dy * 0.05;
-};
+World.prototype.step = function() {};
 
 /**
  * Updates the corresponding DOM element's style property.

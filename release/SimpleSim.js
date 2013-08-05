@@ -1,4 +1,4 @@
-/*! SimpleSim v1.0.0 - 2013-07-21 01:07:34 
+/*! SimpleSim v1.0.0 - 2013-08-03 04:08:26 
  *  Vince Allen 
  *  Brooklyn, NY 
  *  vince@vinceallen.com 
@@ -37,11 +37,18 @@ function Item(options) {
  */
 Item.prototype.init = function(opt_options) {
 
-  var options = opt_options || {};
+  var i, options = opt_options || {};
+
+  for (i in options) {
+    if (options.hasOwnProperty(i)) {
+      this[i] = options[i];
+    }
+  }
 
   this.acceleration = options.acceleration || new exports.Vector();
   this.velocity = options.velocity || new exports.Vector();
   this.location = options.location || new exports.Vector(this.world.width / 2, this.world.height / 2);
+  this.initLocation = options.initLocation || new exports.Vector(this.location.x, this.location.y);
   this.width = options.width || 20;
   this.height = options.height || 20;
   this.mass = (this.width * this.height) * 0.025;
@@ -162,6 +169,15 @@ System._idCount = 0;
 System._stylePosition = '';
 
 /**
+ * Stores the time in milliseconds of the last
+ * resize event. Used to pause renderer during resize
+ * and resume when resize is complete.
+ *
+ * @private
+ */
+System._resizeTime = 0;
+
+/**
  * Increments idCount and returns the value.
  */
 System.getNewId = function() {
@@ -173,13 +189,15 @@ System.getNewId = function() {
  * Initializes the system and starts the update loop.
  *
  * @param {Function} opt_setup= Creates the initial system conditions.
+ * @param {Object} opt_worldOptions= Optional properties for the world.
  * @param {Object} opt_world= A reference to a DOM element representing the System world.
  * @param {Function} opt_supportedFeatures= A map of supported browser features.
  */
-System.init = function(opt_setup, opt_world, opt_supportedFeatures) {
+System.init = function(opt_setup, opt_worldOptions, opt_world, opt_supportedFeatures) {
 
 	var setup = opt_setup || function () {},
       world = opt_world || document.body,
+      worldOptions = opt_worldOptions || {},
       supportedFeatures = opt_supportedFeatures || null;
 
   if (supportedFeatures.csstransforms3d) {
@@ -190,7 +208,7 @@ System.init = function(opt_setup, opt_world, opt_supportedFeatures) {
     this._stylePosition = 'position: absolute; left: <x>px; top: <y>px;';
   }
 
-  System._records.list.push(new exports.World(world));
+  System._records.list.push(new exports.World(world, worldOptions));
 
   exports.Utils._addEvent(window, 'resize', function(e) {
     System._resize.call(System, e);
@@ -282,18 +300,32 @@ System._recordMouseLoc = function(e) {
  */
 System.add = function(klass, opt_options) {
 
-  var last, records = this._records.list,
+  var i, max, pool, last, records = this._records.list,
       recordsLookup = this._records.lookup,
       options = opt_options || {};
 
   options.world = records[0];
 
-  if (exports[klass]) {
-    records[records.length] = new exports[klass](options);
-  } else if (exports.Classes[klass]) {
-    records[records.length] = new exports.Classes[klass](options);
+  // recycle object if one is available
+  pool = this.getAllItemsByName(klass, options.world._pool);
+
+  if (pool.length) {
+    for (i = 0, max = options.world._pool.length; i < max; i++) {
+      if (options.world._pool[i].name === klass) {
+        records[records.length] = options.world._pool.splice(i, 1)[0];
+        records[records.length - 1].options = options;
+        //System._updateCacheLookup(records[records.length - 1], true);
+        break;
+      }
+    }
   } else {
-    throw new Error(klass + ' class does not exist.');
+    if (exports[klass]) {
+      records[records.length] = new exports[klass](options);
+    } else if (exports.Classes[klass]) {
+      records[records.length] = new exports.Classes[klass](options);
+    } else {
+      throw new Error(klass + ' class does not exist.');
+    }
   }
 
   last = records.length - 1;
@@ -303,12 +335,39 @@ System.add = function(klass, opt_options) {
 };
 
 /**
+ * Removes an item from a world.
+ *
+ * @param {Object} obj The item to remove.
+ */
+System.destroyItem = function(obj) {
+
+  var i, max, records = this._records.list;
+
+  for (i = 0, max = records.length; i < max; i++) {
+    if (records[i].id === obj.id) {
+      records[i].el.style.opacity = 0;
+      records[i].world._pool[records[i].world._pool.length] = records.splice(i, 1)[0]; // move record to pool array
+      break;
+    }
+  }
+};
+
+/**
  * Iterates over objects in the system and calls step() and draw().
  * @private
  */
 System._update = function() {
 
-  var i, records = System._records.list, record;
+  var i, records = System._records.list, record, world = records[0];
+
+  // check for resize stop
+  if (System._resizeTime && new Date().getTime() - System._resizeTime > 250) {
+    System._resizeTime = 0;
+    world.pauseStep = false;
+    if (world.afterResize) {
+      world.afterResize.call(this);
+    }
+  }
 
   for (i = records.length - 1; i >= 0; i -= 1) {
     record = records[i];
@@ -355,6 +414,8 @@ System._draw = function(obj) {
     color0: obj.color[0],
     color1: obj.color[1],
     color2: obj.color[2],
+    opacity: obj.opacity,
+    zIndex: obj.zIndex,
     visibility: obj.visibility,
     borderRadius: obj.borderRadius,
     a: obj.angle
@@ -371,7 +432,7 @@ System.getCSSText = function(props) {
   return this._stylePosition.replace(/<x>/g, props.x).replace(/<y>/g, props.y).replace(/<a>/g, props.a) + ' width: ' +
       props.width + 'px; height: ' + props.height + 'px; background-color: ' +
       'rgb(' + props.color0 + ', ' + props.color1 + ', ' + props.color2 + ');' +
-      'visibility: ' + props.visibility + '; border-radius: ' + props.borderRadius + '%';
+      'opacity: ' + props.opacity +  '; z-index: ' + props.zIndex + '; visibility: ' + props.visibility + '; border-radius: ' + props.borderRadius + '%';
 };
 
 /**
@@ -382,6 +443,9 @@ System._resize = function() {
   var i, max, records = this._records.list, record,
       viewportSize = exports.Utils.getViewportSize(),
       world = records[0];
+
+  this._resizeTime = new Date().getTime();
+  world.pauseStep = true;
 
   for (i = 1, max = records.length; i < max; i++) {
     record = records[i];
@@ -414,6 +478,50 @@ System._resetSystem = function(opt_noRestart) {
     (viewportSize.height / 2));
   this._records.list = this._records.list.splice(0, 1);
   System._setup.call(System);
+};
+
+/**
+ * Returns an array of items created from the same constructor.
+ *
+ * @param {string} name The 'name' property.
+ * @param {Array} [opt_list = this._records] An optional list of items.
+ * @returns {Array} An array of items.
+ */
+System.getAllItemsByName = function(name, opt_list) {
+
+  var i, max, arr = [],
+      list = opt_list || this._records.list;
+
+  for (i = 0, max = list.length; i < max; i++) {
+    if (list[i].name === name) {
+      arr[arr.length] = list[i];
+    }
+  }
+  return arr;
+};
+
+/**
+ * Returns an array of items with an attribute that matches the
+ * passed 'attr'. If 'opt_val' is passed, 'attr' must equal 'val'.
+ *
+ * @param {string} attr The property to match.
+ * @param {*} [opt_val=] The 'attr' property must equal 'val'.
+ * @returns {Array} An array of items.
+ */
+System.getAllItemsByAttribute = function(attr, opt_val) {
+
+  var i, max, arr = [], records = this._records.list,
+      val = opt_val !== undefined ? opt_val : null;
+
+  for (i = 0, max = records.length; i < max; i++) {
+    if (records[i][attr] !== undefined) {
+      if (val !== null && records[i][attr] !== val) {
+        continue;
+      }
+      arr[arr.length] = records[i];
+    }
+  }
+  return arr;
 };
 
 exports.System = System;
@@ -608,9 +716,10 @@ Vector.prototype.rotate = function(radians) {
 };
 exports.Vector = Vector;
 
-function World(el) {
+function World(el, opt_options) {
 
-  var viewportSize = exports.Utils.getViewportSize();
+  var options = opt_options || {},
+      viewportSize = exports.Utils.getViewportSize();
 
   if (!el || typeof el !== 'object') {
     throw new Error('World: A valid DOM object is required for a new World.');
@@ -618,18 +727,21 @@ function World(el) {
 
   this.el = el;
   this.el.className = 'world';
-  this.width = viewportSize.width;
-  this.height = viewportSize.height;
-  this.location = new exports.Vector(viewportSize.width / 2, viewportSize.height / 2);
-  this.angle = 0;
-  this.gravity = new exports.Vector(0, 0.1);
-  this.wind = new exports.Vector();
-  this.thermal = new exports.Vector(0, -0.025);
-  this.color = [230, 230, 230];
-  this.visibility ='visible';
+  this.width = options.width || viewportSize.width;
+  this.height = options.height || viewportSize.height;
+  this.location = options.location || new exports.Vector(viewportSize.width / 2,
+      viewportSize.height / 2);
+  this.angle = options.angle === undefined ? 0 : options.angle;
+  this.gravity = options.gravity || new exports.Vector(0, 0.1);
+  this.wind = options.wind || new exports.Vector();
+  this.thermal = options.thermal || new exports.Vector();
+  this.color = options.color || [230, 230, 230];
+  this.visibility = options.visibility || 'visible';
   this.cacheVector = new exports.Vector();
   this.pauseStep = false;
   this.camera = new exports.Vector();
+
+  this._pool = []; // object pool
 }
 
 /**
@@ -641,12 +753,7 @@ World.prototype.world = {};
 /**
  * Updates properties.
  */
-World.prototype.step = function() {
-  var dx = exports.System.mouse.location.x - this.width / 2,
-      dy = exports.System.mouse.location.y - this.height / 2;
-  this.gravity.x = dx * 0.01;
-  this.gravity.y = dy * 0.05;
-};
+World.prototype.step = function() {};
 
 /**
  * Updates the corresponding DOM element's style property.
