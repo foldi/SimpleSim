@@ -1,6 +1,7 @@
 #### FOLDERS ####
 node_modules
+report
 
 #### FILES ####
-*.DS_Store
+.DS_Store
 *.swp

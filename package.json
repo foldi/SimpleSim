@@ -1,6 +1,6 @@
 {
   "name": "SimpleSim",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A simple JavaScript Natural Simulator",
   "main": "src/main.js",
   "scripts": {
@@ -23,6 +23,7 @@
     "grunt-contrib-watch": "~0.5.1",
     "grunt-contrib-jasmine": "~0.5.1",
     "grunt-contrib-csslint": "~0.1.2",
-    "grunt-contrib-cssmin": "~0.6.1"
+    "grunt-contrib-cssmin": "~0.6.1",
+    "grunt-plato": "~0.2.1"
   }
 }
