@@ -1,4 +1,4 @@
-/*! SimpleSim v1.0.1 - 2013-09-08 03:09:23 
+/*! SimpleSim v1.0.0 - 2013-09-08 03:09:13 
  *  Vince Allen 
  *  Brooklyn, NY 
  *  vince@vinceallen.com 
@@ -179,8 +179,6 @@ System._resizeTime = 0;
 
 /**
  * Increments idCount and returns the value.
- * @function getNewId
- * @memberof System
  */
 System.getNewId = function() {
   this._idCount++;
@@ -190,8 +188,6 @@ System.getNewId = function() {
 /**
  * Initializes the system and starts the update loop.
  *
- * @function init
- * @memberof System
  * @param {Function} opt_setup= Creates the initial system conditions.
  * @param {Object} opt_worldOptions= Optional properties for the world.
  * @param {Object} opt_world= A reference to a DOM element representing the System world.
@@ -259,9 +255,6 @@ System.init = function(opt_setup, opt_worldOptions, opt_world, opt_supportedFeat
 /**
  * Handles keyup events.
  *
- * @function _keyup
- * @memberof System
- * @private
  * @param {Object} e An event.
  */
 System._keyup = function(e) {
@@ -283,11 +276,8 @@ System._keyup = function(e) {
 
 /**
  * Saves the mouse velocity and location relative to the browser viewport.
- *
- * @function _recordMouseLoc
- * @memberof System
- * @private
  * @param {Object} e An event.
+ * @private
  */
 System._recordMouseLoc = function(e) {
   this.mouse.lastLocation.x = this.mouse.location.x;
@@ -306,8 +296,6 @@ System._recordMouseLoc = function(e) {
 /**
  * Adds an object to the system.
  *
- * @function add
- * @memberof System
  * @param {Object} opt_options= Object properties.
  */
 System.add = function(klass, opt_options) {
@@ -349,8 +337,6 @@ System.add = function(klass, opt_options) {
 /**
  * Removes an item from a world.
  *
- * @function destroyItem
- * @memberof System
  * @param {Object} obj The item to remove.
  */
 System.destroyItem = function(obj) {
@@ -368,9 +354,6 @@ System.destroyItem = function(obj) {
 
 /**
  * Iterates over objects in the system and calls step() and draw().
- *
- * @function _update
- * @memberof System
  * @private
  */
 System._update = function() {
@@ -401,9 +384,6 @@ System._update = function() {
 
 /**
  * Pauses the system and processes one step in records.
- *
- * @function _stepForward
- * @memberof System
  * @private
  */
 System._stepForward = function() {
@@ -423,11 +403,6 @@ System._stepForward = function() {
 
 /**
  * Updates the corresponding DOM element's style property.
- *
- * @function _draw
- * @memberof System
- * @private
- * @param {Object} obj An item.
  */
 System._draw = function(obj) {
 
@@ -451,8 +426,6 @@ System._draw = function(obj) {
 /**
  * Concatenates a new cssText string.
  *
- * @function getCSSText
- * @memberof System
  * @param {Object} props A map of object properties.
  */
 System.getCSSText = function(props) {
@@ -464,9 +437,6 @@ System.getCSSText = function(props) {
 
 /**
  * Repositions all items relative to the viewport size and resets the world bounds.
- * @function _resize
- * @memberof System
- * @private
  */
 System._resize = function() {
 
@@ -492,10 +462,8 @@ System._resize = function() {
 /**
  * Resets the system.
  *
- * @function _resetSystem
- * @memberof System
- * @private
  * @param {boolean} opt_noRestart= Pass true to not restart the system.
+ * @private
  */
 System._resetSystem = function(opt_noRestart) {
 
@@ -515,8 +483,6 @@ System._resetSystem = function(opt_noRestart) {
 /**
  * Returns an array of items created from the same constructor.
  *
- * @function getAllItemsByName
- * @memberof System
  * @param {string} name The 'name' property.
  * @param {Array} [opt_list = this._records] An optional list of items.
  * @returns {Array} An array of items.
@@ -538,8 +504,6 @@ System.getAllItemsByName = function(name, opt_list) {
  * Returns an array of items with an attribute that matches the
  * passed 'attr'. If 'opt_val' is passed, 'attr' must equal 'val'.
  *
- * @function getAllItemsByAttribute
- * @memberof System
  * @param {string} attr The property to match.
  * @param {*} [opt_val=] The 'attr' property must equal 'val'.
  * @returns {Array} An array of items.
@@ -562,15 +526,13 @@ System.getAllItemsByAttribute = function(attr, opt_val) {
 
 exports.System = System;
 
-/** @namespace */
 var Utils = {};
 
 /**
  * Determines the size of the browser viewport.
  *
- * @function getViewportSize
- * @memberof Utils
  * @returns {Object} The current browser viewport width and height.
+ * @private
  */
 Utils.getViewportSize = function() {
 
@@ -596,12 +558,10 @@ Utils.getViewportSize = function() {
 /**
  * Adds an event listener.
  *
- * @function _addEvent
- * @memberof Utils
- 8 @private
  * @param {Object} target The element to receive the event listener.
  * @param {string} eventType The event type.
  * @param {function} The function to run when the event is triggered.
+ * @private
  */
 Utils._addEvent = function(target, eventType, handler) {
   if (target.addEventListener) { // W3C
@@ -614,8 +574,6 @@ Utils._addEvent = function(target, eventType, handler) {
 /**
  * Extends the properties and methods of a superClass onto a subClass.
  *
- * @function extend
- * @memberof Utils
  * @param {Object} subClass The subClass.
  * @param {Object} superClass The superClass.
  */
@@ -629,8 +587,6 @@ Utils.extend = function(subClass, superClass) {
 /**
  * Generates a psuedo-random number within a range.
  *
- * @function getRandomNumber
- * @memberof Utils
  * @param {number} low The low end of the range.
  * @param {number} high The high end of the range.
  * @param {boolean} [flt] Set to true to return a float.

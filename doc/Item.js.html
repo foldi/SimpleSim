@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: Item.js</title>
+    
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+    
+    <h1 class="page-title">Source: Item.js</h1>
+    
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>/**
+ * Creates a new Item.
+ *
+ * @param {Object} options A map of initial properties.
+ * @constructor
+ */
+function Item(options) {
+
+  if (!options || !options.world || typeof options.world !== 'object') {
+    throw new Error('Item: A valid DOM object is required for a new Item.');
+  }
+
+  this.world = options.world;
+  this.name = options.name || 'Item';
+  this.id = this.name + exports.System.getNewId();
+
+  this.el = document.createElement('div');
+  this.el.id = this.id;
+  this.el.className = 'item ' + this.name.toLowerCase();
+  this.el.style.visibility = 'hidden';
+  this.world.el.appendChild(this.el);
+}
+
+/**
+ * Initializes the object.
+ * @param {Object} options= A map of initial properties.
+ */
+Item.prototype.init = function(opt_options) {
+
+  var i, options = opt_options || {};
+
+  for (i in options) {
+    if (options.hasOwnProperty(i)) {
+      this[i] = options[i];
+    }
+  }
+
+  this.acceleration = options.acceleration || new exports.Vector();
+  this.velocity = options.velocity || new exports.Vector();
+  this.location = options.location || new exports.Vector(this.world.width / 2, this.world.height / 2);
+  this.initLocation = options.initLocation || new exports.Vector(this.location.x, this.location.y);
+  this.width = options.width || 20;
+  this.height = options.height || 20;
+  this.mass = (this.width * this.height) * 0.025;
+  this.color = options.color || [0, 0, 0];
+  this.visibility = options.visibility || 'visible';
+  this.maxSpeed = options.maxSpeed || 5;
+  this.bounciness = options.bounciness || 0.75;
+  this.borderRadius = options.borderRadius || 0;
+  this.angle = options.angle || 0;
+  this.checkWorldEdges = options.checkWorldEdges === undefined ? true : options.checkWorldEdges;
+  this.controlCamera = options.controlCamera === undefined ? false : options.controlCamera;
+};
+
+/**
+ * Updates properties.
+ */
+Item.prototype.step = function() {
+  this.applyForce(this.world.wind);
+  this.applyForce(this.world.thermal);
+  this.applyForce(this.world.gravity);
+  this.velocity.add(this.acceleration);
+  this.velocity.limit(this.maxSpeed);
+  if (this.checkWorldEdges) {
+    this._checkWorldEdges();
+  }
+  if (this.controlCamera) {
+    this._checkCameraEdges();
+  }
+  this.location.add(this.velocity);
+  this.angle = this.location.x;
+  this.acceleration.mult(0);
+};
+
+/**
+ * Adds a force to this object's acceleration.
+ *
+ * @param {Object} force A Vector representing a force to apply.
+ */
+Item.prototype.applyForce = function(force) {
+  var vector = this.world.cacheVector;
+  vector.x = force.x;
+  vector.y = force.y;
+  vector.div(this.mass);
+  this.acceleration.add(vector);
+};
+
+/**
+ * Determines if this object is outside the world bounds.
+ * @private
+ */
+Item.prototype._checkWorldEdges = function() {
+
+  var world = this.world,
+      location = this.location,
+      velocity = this.velocity,
+      width = this.width,
+      height = this.height,
+      bounciness = this.bounciness;
+
+  if (location.x + width / 2 > world.width) {
+    location.x = world.width - width / 2;
+    velocity.x *= -1 * bounciness;
+  } else if (location.x &lt; width / 2) {
+    location.x = width / 2;
+    velocity.x *= -1 * bounciness;
+  }
+
+  if (location.y + height / 2 > world.height) {
+    location.y = world.height - height / 2;
+    velocity.y *= -1 * bounciness;
+  } else if (location.y &lt; height / 2) {
+    location.y = height / 2;
+    velocity.y *= -1 * bounciness;
+  }
+};
+
+/**
+ * Moves the world in the opposite direction of the item.
+ */
+Item.prototype._checkCameraEdges = function() {
+  this.world.camera.x = this.velocity.x;
+  this.world.camera.y = this.velocity.y;
+  this.world.location.add(this.world.camera.mult(-1));
+};
+
+/**
+ * Updates the corresponding DOM element's style property.
+ */
+Item.prototype.draw = function() {
+  exports.System._draw(this);
+};</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Item.html">Item</a></li><li><a href="Vector.html">Vector</a></li><li><a href="World.html">World</a></li></ul><h3>Namespaces</h3><ul><li><a href="System.html">System</a></li><li><a href="Utils.html">Utils</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0</a> on Sun Sep 08 2013 15:30:47 GMT-0400 (EDT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
